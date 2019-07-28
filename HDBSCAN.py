@@ -63,7 +63,7 @@ minClusterSize = list() #list to store the min cluster size for plotting
 numP = list() #list to store the number of particles/clusters identified
 sil = list() #list to store the corresponding silhouette score
 #Running HDBSCAN for less than 50nm radius(min cluster size = 3) to 450nm radius (min cluster size = 56)
-for i in range(3,5,1):
+for i in range(3,57,1):
     print(i)
     minClusterSize.append(i)
     hdbscanObj = hdbscan.HDBSCAN(min_cluster_size=i)
@@ -104,3 +104,6 @@ print("HDBSCAN Silhouette score: " + str(optHDBSCANSilhouette))
 colors = generateColors(optnumParticles, optlabels)
 #Creating a widget to view the clusters
 createWidget(coordinateVectors,colors)
+
+#Writing optimal labels to a csv file
+np.savetxt('hdbscanLabels.csv', optlabels, delimiter=",", fmt='%s')
