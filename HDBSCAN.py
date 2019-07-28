@@ -57,15 +57,32 @@ def createWidget(coordinateVectors,colors):
 coordinates = getPoints('3DCoordinates.csv')
 #coordinateVectors is the input to clustering algorithms 
 coordinateVectors = np.vstack((coordinates[0],coordinates[1],coordinates[2])).T
+
 #HDBSCAN
-hdbscanObj = hdbscan.HDBSCAN()
-labels = hdbscanObj.fit_predict(coordinateVectors)
-numParticles = max(labels) + 1 #Adding one because zero is a label
-print("Number of germ plasm RNPs identified: " + str(numParticles)) 
-HDBSCANSilhouette = sklearn.metrics.silhouette_score(coordinateVectors, labels)
-print("HDBSCAN Silhouette score: " + str(HDBSCANSilhouette))
+minClusterSize = list() #list to store the min cluster size for plotting
+numP = list() #list to store the number of particles/clusters identified
+sil = list() #list to store the corresponding silhouette score
+#Running HDBSCAN for less than 50nm radius(min cluster size = 3) to 450nm radius (min cluster size = 56)
+for i in range(3,57,1):
+    print(i)
+    minClusterSize.append(i)
+    hdbscanObj = hdbscan.HDBSCAN(min_cluster_size=i)
+    labels = hdbscanObj.fit_predict(coordinateVectors)
+    numParticles = max(labels) + 1 #Adding one because zero is a label
+    numP.append(numParticles) 
+    #print("Number of germ plasm RNPs identified: " + str(numParticles)) 
+    HDBSCANSilhouette = sklearn.metrics.silhouette_score(coordinateVectors, labels)
+    sil.append(HDBSCANSilhouette)
+    #print("HDBSCAN Silhouette score: " + str(HDBSCANSilhouette))
+
+plt.plot(minClusterSize,numP)
+plt.plot(minClusterSize,sil)
+plt.xlabel("hdbscan min cluster size")
+plt.show()
+'''
 #Visualization 
 #Generating a random list of colors for each label 
 colors = generateColors(numParticles, labels)
 #Creating a widget to view the clusters
 createWidget(coordinateVectors,colors)
+'''
