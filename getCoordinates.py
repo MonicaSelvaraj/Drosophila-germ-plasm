@@ -35,8 +35,8 @@ def getCoordinates(I,slice):
 
 #Getting the coordinates for all the z-slices and storing it in an array called pos
 pos = np.zeros((1,3)) #Making pos the same dimensions as the slice coordinates to allow for concatenation 
-for i in range(15,25,1):
-    I = GetSliceIntensities("Data/10 Aged Embryo_01007_Reconstructed/ZResults/Results"+str(i)+".csv") #I is the matrix of intensities
+for i in range(0,11,1):
+    I = GetSliceIntensities("Data/A_nos_embryo7_488_cmle-19-29/ZResults/Results"+str(i)+".csv") #I is the matrix of intensities
     AxisLim = I.shape[0]#Number of rows/columns
     x,y,z = getCoordinates(I,i)
     size = len(z)
@@ -62,4 +62,4 @@ if __name__ == '__main__':
 #Saving coordinates to file 
 data = np.hsplit(pos,3)
 X = np.array(data[0], dtype = int);Y = np.array(data[1], dtype = int);Z = np.array(data[2], dtype = int)
-np.savetxt('PixelCoordinates.csv', np.column_stack((X, Y, Z)), delimiter=",", fmt='%s')
+np.savetxt('3DCoordinates.csv', np.column_stack((X, Y, Z)), delimiter=",", fmt='%s')
