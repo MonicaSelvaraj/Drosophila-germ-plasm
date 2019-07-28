@@ -3,7 +3,7 @@ DrosophilaGP Macro
 */
 
 //Storing the path to the input files 
-inputDir ="/Users/ms12122/Desktop/DrosophilaGP/Stacks/";
+inputDir ="/Users/ms12122/Desktop/Drosophila-germ-plasm/Stacks/";
 
 /* 
 Sometimes, ImageJ can get confused when it has to open or close windows and perform operations on them, in which case it can appear as if operations are called out of order. To prevent that, enable the batch mode
@@ -18,13 +18,12 @@ list = getFileList(inputDir);
 for(i=0;i<list.length;i++){
 //The following actions are performed for each z-stack
 
-    open(inputDir+list[i]); //TESTED
-    run("Duplicate...", "duplicate"); //TESTED
-	run("Auto Threshold", "method=Yen ignore_black white use_stack_histogram"); //TESTED
-	outputFilename = substring(list[i],0,lengthOf(list[i])-4);
-	thresholdingOutputPath = "/Users/ms12122/Desktop/DrosophilaGP/Data/"+outputFilename+"/ZSlices/";
+    open(inputDir+list[i]);
+    run("Duplicate...", "duplicate");
+	run("Auto Threshold", "method=Yen ignore_black white use_stack_histogram");	outputFilename = substring(list[i],0,lengthOf(list[i])-4);
+	thresholdingOutputPath = "/Users/ms12122/Desktop/Drosophila-germ-plasm/Data/"+outputFilename+"/ZSlices/";
     run("Image Sequence... ", "format=TIFF save=thresholdingOutputPath");
-    resultsOutputPath = "/Users/ms12122/Desktop/DrosophilaGP/Data/"+outputFilename+"/ZResults/";
+    resultsOutputPath = "/Users/ms12122/Desktop/Drosophila-germ-plasm/Data/"+outputFilename+"/ZResults/";
     zSliceList = getFileList(thresholdingOutputPath);
     for(j=0;j<zSliceList.length;j++){
         open(thresholdingOutputPath+zSliceList[j]);
