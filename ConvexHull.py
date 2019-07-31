@@ -101,6 +101,21 @@ for i in range(0, int(numParticles),1):
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
     
+    #Checking if we have a 2D case or 3D case by checking min and max in each dimension 
+    #Splitting x,y,z
+    cx,cy,cz = zip(*c)
+    #Getting the difference between the min and max element in each dimension 
+    dx = max(cx) - min(cx);dy = max(cy) - min(cy);dz = max(cz) - min(cz)
+    #Changing input to QHull depending on the dimension 
+    if(dx == 0):
+        input = np.vstack((y,z)).T
+    elif(dy == 0):
+        input = np.vstack((x,z)).T
+    elif(dz == 0):
+        input = np.vstack((x,y)).T
+    else:
+        input = c
+    
     '''
     #Visualizing the cluster
     xc = list(); yc = list(); zc = list()
@@ -116,12 +131,23 @@ for i in range(0, int(numParticles),1):
     ax.set_ylabel ('y axis')
     ax.set_zlabel ('z axis')
     '''
+    
     #Convex hull of the cluster
-    convexHull = ConvexHull(c) 
+    convexHull = ConvexHull(input) 
     clusterVertices = convexHull.vertices
-    print(clusterVertices)
-    sp2 = gl.GLMeshItem(meshdata=clusterVertices, color = [0,1,0,0])
+    #print(clusterVertices)
+    
+    #Making a list of coordinates of the vertices 
+    vertices = list()
+    for v in clusterVertices:
+        vertices.append(input[v])
+    
+    #print(vertices)
+    '''
+    sp2 = gl.GLMeshItem(meshdata=vertices, color = [0,1,0,0])
     w.addItem(sp2)
+    '''
+    
     '''
     #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
     for s in convexHull.simplices:
