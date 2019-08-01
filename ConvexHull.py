@@ -9,6 +9,7 @@ import pyqtgraph.opengl as gl
 from scipy.spatial import ConvexHull
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 import random
+from sklearn.ensemble import IsolationForest
 
 '''
 Use: To read a file with x,y,z coordinates, and store the data for each dimension in a separate array.
@@ -83,7 +84,7 @@ colors = generateColors(numParticles, sortedLabels)
 #Creating a widget for 3D plotting 
 app = QtGui.QApplication([])
 w = gl.GLViewWidget()
-w.show()
+#w.show()
 sp1 = gl.GLScatterPlotItem(pos=s, color = colors, pxMode=True, size = 0.0000001)
 sp1.setGLOptions('opaque')
 w.addItem(sp1)
@@ -95,11 +96,35 @@ sortedData - data sorted by label (has been denoised)
 s - sorted list of points for plotting
 sortedLabels - sorted labels, corresponds with sortedData and s
 '''
+
+#Setting up for 3D plotting 
+
     
 #Finding the convex hull for every cluster
-for i in range(0, int(numParticles),1):
+#for i in range(0, int(numParticles),1):
+for i in range(0, 1,1):
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
+    c = np.array(c, dtype = float)
+    
+    print(i)
+    #Removing anomalous points from the cluster
+    #print(c)
+    model = IsolationForest(behaviour="new",max_samples=len(c),contamination='auto')
+    model.fit(c)
+    sklearn_score_anomalies = model.decision_function(c)
+    #(Source: https://stats.stackexchange.com/questions/335274/scikit-learn-isolationforest-anomaly-score)
+    original_paper_score = [-1*s + 0.5 for s in sklearn_score_anomalies]
+    print(original_paper_score)
+    
+    cleanCluster = list()
+    for i in range(0, len(c), 1):
+        if(original_paper_score[i]>0.6): continue
+        else: cleanCluster.append(c[i])
+    cleanCluster = np.array(cleanCluster, dtype = float)
+    print(c); print(len(c))
+    print('Anomalies removed');print(cleanCluster); print(len(cleanCluster))
+    
     
     #Checking if we have a 2D case or 3D case by checking min and max in each dimension 
     #Splitting x,y,z
@@ -115,49 +140,57 @@ for i in range(0, int(numParticles),1):
         input = np.vstack((x,y)).T
     else:
         input = c
-    
-    '''
-    #Visualizing the cluster
-    xc = list(); yc = list(); zc = list()
-    for p in c:
-        	xc.append(p[0]); yc.append(p[1]); zc.append(p[2])
-    fig = plt.figure( )
-    plt.style.use('dark_background')
-    ax = fig.add_subplot(1,1,1, projection = '3d')
-    ax.grid(False)
-    ax.scatter (xc,yc,zc, c = 'g', marker='o', s=100, linewidths=2)
-    ax.set_title('Visualizing one cluster')
-    ax.set_xlabel ('x, axis')
-    ax.set_ylabel ('y axis')
-    ax.set_zlabel ('z axis')
-    '''
+        
+    input = np.array(input, dtype = float)
+    #print(input)
     
     #Convex hull of the cluster
     convexHull = ConvexHull(input) 
-    clusterVertices = convexHull.vertices
-    #print(clusterVertices)
+    #clusterVertices = convexHull.vertices
     
+    '''
     #Making a list of coordinates of the vertices 
     vertices = list()
     for v in clusterVertices:
         vertices.append(input[v])
     
     #print(vertices)
-    '''
-    sp2 = gl.GLMeshItem(meshdata=vertices, color = [0,1,0,0])
+    
+    sp2 = gl.GLLinePlotItem(pos=vertices, color = [0,1,0,1])
     w.addItem(sp2)
     '''
     
-    '''
-    #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
-    for s in convexHull.simplices:
-        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
-        ax.plot(c[s, 0], c[s, 1], c[s, 2], "r-")
+    #Plotting based on if the convex hull was determined for a 2d or 3d case
+    if(len(input[0]) == 2):
+        continue #Skipping potting of flat granules for now 
+        #plt.plot()
+        #plt.plot(input[convexHull.vertices,0], input[convexHull.vertices,1], 'r--', lw=2)
+        #plt.plot(input[convexHull.vertices[0],0], input[convexHull.vertices[0],1], 'ro')
+        #plt.show()
+    else:
+        fig = plt.figure( )
+        plt.style.use('dark_background')
+        ax = fig.add_subplot(1,1,1, projection = '3d')
+        ax.grid(False)
+        #Visualizing the cluster
+        ax.scatter (cx,cy,cz, c = 'g', marker='o', s=1, linewidths=2)
+        ax.set_title('Visualizing convex hull')
+        ax.set_xlabel ('x, axis')
+        ax.set_ylabel ('y axis')
+        ax.set_zlabel ('z axis')
+        #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
+        for s in convexHull.simplices:
+            s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+            #print("Entering 3D loop")
+            #print(input[s, 0]);print(input[s, 1]);print(input[s, 2])
+            ax.plot(input[s, 0], input[s, 1], input[s, 2], "r-")
+        plt.show()
     
-    plt.show()
-    '''
 
+    
+
+'''
 # Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
     QtGui.QApplication.instance().exec_() 
-    
+'''
