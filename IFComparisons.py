@@ -78,7 +78,7 @@ denoisedLabels =  [i for i in labels if i > -1]
 denoisedLabels.sort() #sorting labels to match sorted Data for plotting 
 sortedLabels = [int(i) for i in denoisedLabels]
 
-
+'''
 #Checking if sorting data and labels worked 
 colors = generateColors(numParticles, sortedLabels)
 #Creating a widget for 3D plotting 
@@ -88,6 +88,7 @@ w = gl.GLViewWidget()
 sp1 = gl.GLScatterPlotItem(pos=s, color = colors, pxMode=True, size = 0.0000001)
 sp1.setGLOptions('opaque')
 w.addItem(sp1)
+'''
 
 '''
 Data:
@@ -96,98 +97,72 @@ sortedData - data sorted by label (has been denoised)
 s - sorted list of points for plotting
 sortedLabels - sorted labels, corresponds with sortedData and s
 '''
-
-#Setting up for 3D plotting 
-
     
 #Finding the convex hull for every cluster
 #for i in range(0, int(numParticles),1):
 for i in range(0, 20,1):
+    print(i)
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
     c = np.array(c, dtype = float)
     
-    print(i)
+    '''
+    Set up for 3d plotting 
+    '''
+    fig = plt.figure( )
+    plt.style.use('dark_background')
+    
+    '''
+    Finding the convex hull of clusters without removing outliers 
+    '''
+    #Checking if we have a 2D case or 3D case by checking min and max in each dimension 
+    cx,cy,cz = zip(*c) 
+    dx = max(cx) - min(cx);dy = max(cy) - min(cy);dz = max(cz) - min(cz)#Getting the difference between the min and max element in each dimension
+    if(dx == 0 or dy == 0 or dz == 0): continue
+    convexHull = ConvexHull(c) 
+    ax = fig.add_subplot(1,2,1, projection = '3d')
+    ax.grid(False)
+    #Visualizing the cluster
+    ax.scatter (cx,cy,cz, c = 'g', marker='o', s=10, linewidths=2)
+    ax.set_title('Visualizing convex hull before outlier removal')
+    ax.set_xlabel ('x, axis')
+    ax.set_ylabel ('y axis')
+    ax.set_zlabel ('z axis')
+    #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
+    for s in convexHull.simplices:
+        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+        ax.plot(c[s, 0], c[s, 1], c[s, 2], "r-")
+        
+    '''
+    Finding the convex hull of clusters after removing outliers
+    '''
     #Removing anomalous points from the cluster
-    #print(c)
     model = IsolationForest(behaviour="new",max_samples=len(c),contamination='auto')
     model.fit(c)
     sklearn_score_anomalies = model.decision_function(c)
     #(Source: https://stats.stackexchange.com/questions/335274/scikit-learn-isolationforest-anomaly-score)
     original_paper_score = [-1*s + 0.5 for s in sklearn_score_anomalies]
-    print(original_paper_score)
-    
     cleanCluster = list()
     for i in range(0, len(c), 1):
         if(original_paper_score[i]>0.6): continue
         else: cleanCluster.append(c[i])
     cleanCluster = np.array(cleanCluster, dtype = float)
-    print(c); print(len(c))
-    print('Anomalies removed');print(cleanCluster); print(len(cleanCluster))
-    
-    
-    #Checking if we have a 2D case or 3D case by checking min and max in each dimension 
-    #Splitting x,y,z
-    cx,cy,cz = zip(*cleanCluster)
-    #Getting the difference between the min and max element in each dimension 
-    dx = max(cx) - min(cx);dy = max(cy) - min(cy);dz = max(cz) - min(cz)
-    #Changing input to QHull depending on the dimension 
-    if(dx == 0):
-        input = np.vstack((cy,cz)).T
-    elif(dy == 0):
-        input = np.vstack((cx,cz)).T
-    elif(dz == 0):
-        input = np.vstack((cx,cy)).T
-    else:
-        input = cleanCluster
-        
-    input = np.array(input, dtype = float)
-    #print(input)
-    
-    #Convex hull of the cluster
-    convexHull = ConvexHull(input) 
-    #clusterVertices = convexHull.vertices
-    
-    '''
-    #Making a list of coordinates of the vertices 
-    vertices = list()
-    for v in clusterVertices:
-        vertices.append(input[v])
-    
-    #print(vertices)
-    
-    sp2 = gl.GLLinePlotItem(pos=vertices, color = [0,1,0,1])
-    w.addItem(sp2)
-    '''
-    
-    #Plotting based on if the convex hull was determined for a 2d or 3d case
-    if(len(input[0]) == 2):
-        continue #Skipping potting of flat granules for now 
-        #plt.plot()
-        #plt.plot(input[convexHull.vertices,0], input[convexHull.vertices,1], 'r--', lw=2)
-        #plt.plot(input[convexHull.vertices[0],0], input[convexHull.vertices[0],1], 'ro')
-        #plt.show()
-    else:
-        fig = plt.figure( )
-        plt.style.use('dark_background')
-        ax = fig.add_subplot(1,1,1, projection = '3d')
-        ax.grid(False)
-        #Visualizing the cluster
-        ax.scatter (cx,cy,cz, c = 'g', marker='o', s=1, linewidths=2)
-        ax.set_title('Visualizing convex hull')
-        ax.set_xlabel ('x, axis')
-        ax.set_ylabel ('y axis')
-        ax.set_zlabel ('z axis')
-        #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
-        for s in convexHull.simplices:
-            s = np.append(s, s[0])  # Here we cycle back to the first coordinate
-            #print("Entering 3D loop")
-            #print(input[s, 0]);print(input[s, 1]);print(input[s, 2])
-            ax.plot(input[s, 0], input[s, 1], input[s, 2], "r-")
-        plt.show()
-    
-
-    
+    print(len(c))
+    print('Anomalies removed');print(len(cleanCluster))
+    convexHull = ConvexHull(cleanCluster) 
+    ax = fig.add_subplot(1,2,1, projection = '3d')
+    ax.grid(False)
+    #Visualizing the cluster
+    ax.scatter (cx,cy,cz, c = 'g', marker='o', s=10, linewidths=2)
+    ax.set_title('Visualizing convex hull after outlier removal')
+    ax.set_xlabel ('x, axis')
+    ax.set_ylabel ('y axis')
+    ax.set_zlabel ('z axis')
+    #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
+    for s in convexHull.simplices:
+        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+        ax.plot(cleanCluster[s, 0], cleanCluster[s, 1], cleanCluster[s, 2], "r-")
+    plt.show()
 
 '''
 # Start Qt event loop unless running in interactive mode.
