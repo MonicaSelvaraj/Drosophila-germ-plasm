@@ -101,12 +101,15 @@ sortedLabels - sorted labels, corresponds with sortedData and s
 
 rem = 0
 #Finding the convex hull for every cluster
-#for i in range(0, int(numParticles),1):
-for i in range(0,50,1):
+for i in range(0, int(numParticles),1):
+#for i in range(0,50,1):
     print(i)
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
     c = np.array(c, dtype = float)
+    
+    #Removing very small clusters here
+    if(len(c) <= 3): print('Removed cluster with' + str(len(c)) + 'points'); continue;
     
     '''
     Finding the convex hull of clusters without removing outliers 
@@ -114,13 +117,8 @@ for i in range(0,50,1):
     #Checking if we have a 2D case or 3D case by checking min and max in each dimension 
     cx,cy,cz = zip(*c) 
     dx = max(cx) - min(cx);dy = max(cy) - min(cy);dz = max(cz) - min(cz)#Getting the difference between the min and max element in each dimension
-    if(dx == 0 or dy == 0 or dz == 0): continue
+    if(dx == 0 or dy == 0 or dz == 0): print('Flat cluster');continue
     
-    '''
-    Set up for 3d plotting 
-    '''
-    fig = plt.figure( )
-    plt.style.use('dark_background')
     
     
     #scaling hull input after removing outliers
@@ -133,20 +131,6 @@ for i in range(0,50,1):
     
     convexHull = ConvexHull(scaledHullInput)
     
-    
-    ax = fig.add_subplot(1,2,1, projection = '3d')
-    ax.grid(False)
-    #Visualizing the cluster
-    ax.scatter (scx,scy,scz, c = 'g', marker='o', s=10, linewidths=2)
-    ax.set_title('Before')
-    ax.set_xlabel ('x, axis')
-    ax.set_ylabel ('y axis')
-    ax.set_zlabel ('z axis')
-    #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
-    for s in convexHull.simplices:
-        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
-        ax.plot(scaledHullInput[s, 0], scaledHullInput[s, 1], scaledHullInput[s, 2], "r-")
-     
     '''
     Finding the convex hull of clusters after removing outliers
     '''
@@ -171,8 +155,26 @@ for i in range(0,50,1):
     
     ccx,ccy,ccz = zip(*cleanCluster) 
     cdx = max(ccx) - min(ccx);cdy = max(ccy) - min(ccy);cdz = max(ccz) - min(ccz)#Getting the difference between the min and max element in each dimension
-    if(cdx == 0 or cdy == 0 or cdz == 0): continue
+    if(cdx == 0 or cdy == 0 or cdz == 0): print('Flat cluster');continue
     
+    '''
+    Set up for 3d plotting 
+    '''
+    fig = plt.figure( )
+    plt.style.use('dark_background')
+    #plotting before here
+    ax = fig.add_subplot(1,2,1, projection = '3d')
+    ax.grid(False)
+    #Visualizing the cluster
+    ax.scatter (scx,scy,scz, c = 'g', marker='o', s=10, linewidths=2)
+    ax.set_title('Before')
+    ax.set_xlabel ('x, axis')
+    ax.set_ylabel ('y axis')
+    ax.set_zlabel ('z axis')
+    #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
+    for s in convexHull.simplices:
+        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+        ax.plot(scaledHullInput[s, 0], scaledHullInput[s, 1], scaledHullInput[s, 2], "r-")
     
     print('Before:');print(len(c))
     print('After');print(len(cleanCluster))
@@ -203,7 +205,7 @@ for i in range(0,50,1):
         ax.plot(scaledHullInputClean[s, 0], scaledHullInputClean[s, 1], scaledHullInputClean[s, 2], "r-")
     plt.show()
     
-print(rem)
+print('Points removed from ' + str(rem) + ' clusters')
 '''
 # Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
