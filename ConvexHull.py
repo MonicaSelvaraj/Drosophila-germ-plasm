@@ -102,7 +102,7 @@ sortedLabels - sorted labels, corresponds with sortedData and s
     
 #Finding the convex hull for every cluster
 #for i in range(0, int(numParticles),1):
-for i in range(0, 1,1):
+for i in range(0, 20,1):
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
     c = np.array(c, dtype = float)
@@ -128,18 +128,18 @@ for i in range(0, 1,1):
     
     #Checking if we have a 2D case or 3D case by checking min and max in each dimension 
     #Splitting x,y,z
-    cx,cy,cz = zip(*c)
+    cx,cy,cz = zip(*cleanCluster)
     #Getting the difference between the min and max element in each dimension 
     dx = max(cx) - min(cx);dy = max(cy) - min(cy);dz = max(cz) - min(cz)
     #Changing input to QHull depending on the dimension 
     if(dx == 0):
-        input = np.vstack((y,z)).T
+        input = np.vstack((cy,cz)).T
     elif(dy == 0):
-        input = np.vstack((x,z)).T
+        input = np.vstack((cx,cz)).T
     elif(dz == 0):
-        input = np.vstack((x,y)).T
+        input = np.vstack((cx,cy)).T
     else:
-        input = c
+        input = cleanCluster
         
     input = np.array(input, dtype = float)
     #print(input)

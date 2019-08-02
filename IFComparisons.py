@@ -97,20 +97,15 @@ sortedData - data sorted by label (has been denoised)
 s - sorted list of points for plotting
 sortedLabels - sorted labels, corresponds with sortedData and s
 '''
-    
+
+rem = 0
 #Finding the convex hull for every cluster
 #for i in range(0, int(numParticles),1):
-for i in range(0, 20,1):
+for i in range(0,1,1):
     print(i)
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
     c = np.array(c, dtype = float)
-    
-    '''
-    Set up for 3d plotting 
-    '''
-    fig = plt.figure( )
-    plt.style.use('dark_background')
     
     '''
     Finding the convex hull of clusters without removing outliers 
@@ -119,12 +114,20 @@ for i in range(0, 20,1):
     cx,cy,cz = zip(*c) 
     dx = max(cx) - min(cx);dy = max(cy) - min(cy);dz = max(cz) - min(cz)#Getting the difference between the min and max element in each dimension
     if(dx == 0 or dy == 0 or dz == 0): continue
-    convexHull = ConvexHull(c) 
+    
+    '''
+    Set up for 3d plotting 
+    '''
+    fig = plt.figure( )
+    plt.style.use('dark_background')
+    
+    convexHull = ConvexHull(c)
+    
     ax = fig.add_subplot(1,2,1, projection = '3d')
     ax.grid(False)
     #Visualizing the cluster
     ax.scatter (cx,cy,cz, c = 'g', marker='o', s=10, linewidths=2)
-    ax.set_title('Visualizing convex hull before outlier removal')
+    ax.set_title('Before')
     ax.set_xlabel ('x, axis')
     ax.set_ylabel ('y axis')
     ax.set_zlabel ('z axis')
@@ -132,7 +135,7 @@ for i in range(0, 20,1):
     for s in convexHull.simplices:
         s = np.append(s, s[0])  # Here we cycle back to the first coordinate
         ax.plot(c[s, 0], c[s, 1], c[s, 2], "r-")
-        
+     
     '''
     Finding the convex hull of clusters after removing outliers
     '''
@@ -140,21 +143,36 @@ for i in range(0, 20,1):
     model = IsolationForest(behaviour="new",max_samples=len(c),contamination='auto')
     model.fit(c)
     sklearn_score_anomalies = model.decision_function(c)
+    print('Anomaly scores')
+    print(sklearn_score_anomalies)
+    print('Predictions for individual points')
+    print(model.predict(c))
     #(Source: https://stats.stackexchange.com/questions/335274/scikit-learn-isolationforest-anomaly-score)
     original_paper_score = [-1*s + 0.5 for s in sklearn_score_anomalies]
     cleanCluster = list()
     for i in range(0, len(c), 1):
-        if(original_paper_score[i]>0.6): continue
+        if(original_paper_score[i]>0.65): continue
         else: cleanCluster.append(c[i])
     cleanCluster = np.array(cleanCluster, dtype = float)
-    print(len(c))
-    print('Anomalies removed');print(len(cleanCluster))
+    
+    ccx,ccy,ccz = zip(*cleanCluster) 
+    cdx = max(ccx) - min(ccx);cdy = max(ccy) - min(ccy);cdz = max(ccz) - min(ccz)#Getting the difference between the min and max element in each dimension
+    if(cdx == 0 or cdy == 0 or cdz == 0): continue
+    
+    
+    print('Before:');print(len(c))
+    print('After');print(len(cleanCluster))
+    
+    
+    if(len(c) - len(cleanCluster) != 0): rem = rem+1
     convexHull = ConvexHull(cleanCluster) 
-    ax = fig.add_subplot(1,2,1, projection = '3d')
+    
+    
+    ax = fig.add_subplot(1,2,2, projection = '3d')
     ax.grid(False)
     #Visualizing the cluster
     ax.scatter (cx,cy,cz, c = 'g', marker='o', s=10, linewidths=2)
-    ax.set_title('Visualizing convex hull after outlier removal')
+    ax.set_title('After')
     ax.set_xlabel ('x, axis')
     ax.set_ylabel ('y axis')
     ax.set_zlabel ('z axis')
@@ -163,7 +181,8 @@ for i in range(0, 20,1):
         s = np.append(s, s[0])  # Here we cycle back to the first coordinate
         ax.plot(cleanCluster[s, 0], cleanCluster[s, 1], cleanCluster[s, 2], "r-")
     plt.show()
-
+    
+print(rem)
 '''
 # Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
