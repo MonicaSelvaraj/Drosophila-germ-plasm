@@ -99,15 +99,17 @@ s - sorted list of points for plotting
 sortedLabels - sorted labels, corresponds with sortedData and s
 '''
 
+dv = list();xForVolPlot = list() #Keeping track of change in volume
+clusterCounter = 0; #i is a counter for labels 
 rem = 0
 #Finding the convex hull for every cluster
-for i in range(0, int(numParticles),1):
-#for i in range(0,50,1):
+#for i in range(0, int(numParticles),1):
+for i in range(0,20,1):
     print(i)
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
     c = np.array(c, dtype = float)
-    
+    clusterCounter = clusterCounter+1
     #Removing very small clusters here
     if(len(c) <= 3): print('Removed cluster with' + str(len(c)) + 'points'); continue;
     
@@ -130,6 +132,7 @@ for i in range(0, int(numParticles),1):
 
     
     convexHull = ConvexHull(scaledHullInput)
+    volBefore = convexHull.volume
     
     '''
     Finding the convex hull of clusters after removing outliers
@@ -160,6 +163,7 @@ for i in range(0, int(numParticles),1):
     '''
     Set up for 3d plotting 
     '''
+    '''
     fig = plt.figure( )
     plt.style.use('dark_background')
     #plotting before here
@@ -175,7 +179,7 @@ for i in range(0, int(numParticles),1):
     for s in convexHull.simplices:
         s = np.append(s, s[0])  # Here we cycle back to the first coordinate
         ax.plot(scaledHullInput[s, 0], scaledHullInput[s, 1], scaledHullInput[s, 2], "r-")
-    
+    '''
     print('Before:');print(len(c))
     print('After');print(len(cleanCluster))
     
@@ -190,7 +194,10 @@ for i in range(0, int(numParticles),1):
     scaledHullInputClean = np.vstack((sccx,sccy,sccz)).T
     
     convexHull = ConvexHull(scaledHullInputClean) 
+    volAfter = convexHull.volume
     
+    if((volBefore - volAfter) != 0):xForVolPlot.append(clusterCounter);dv.append(volBefore - volAfter)
+    '''
     ax = fig.add_subplot(1,2,2, projection = '3d')
     ax.grid(False)
     #Visualizing the cluster
@@ -204,8 +211,20 @@ for i in range(0, int(numParticles),1):
         s = np.append(s, s[0])  # Here we cycle back to the first coordinate
         ax.plot(scaledHullInputClean[s, 0], scaledHullInputClean[s, 1], scaledHullInputClean[s, 2], "r-")
     plt.show()
+    '''
     
-print('Points removed from ' + str(rem) + ' clusters')
+print('Points removed from ' + str(rem) + 'clusters')
+print(xForVolPlot)
+dvMean = np.mean(dv);dvSd = np.std(dv)
+print('Mean change in volume: ' + str(dvMean))
+print('Standard deviation: ' + str(dvSd))
+for i in range(0, len(dv), 1):
+    if(dv[i] > (dvMean + 2*dvSd)): plt.scatter(xForVolPlot[i],dv[i],c='g')
+    else: plt.scatter(xForVolPlot[i],dv[i],c='b')
+plt.xlabel('Cluster number')
+plt.ylabel('Change in volume')
+plt.show()
+
 '''
 # Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
