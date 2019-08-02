@@ -101,7 +101,7 @@ sortedLabels - sorted labels, corresponds with sortedData and s
 rem = 0
 #Finding the convex hull for every cluster
 #for i in range(0, int(numParticles),1):
-for i in range(0,1,1):
+for i in range(0,50,1):
     print(i)
     cluster = [j for j in sortedData if j[3] == i] #Accessing the points of every cluster
     c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
@@ -140,18 +140,21 @@ for i in range(0,1,1):
     Finding the convex hull of clusters after removing outliers
     '''
     #Removing anomalous points from the cluster
-    model = IsolationForest(behaviour="new",max_samples=len(c),contamination='auto')
+    model = IsolationForest(behaviour="new",max_samples=len(c),contamination='auto',n_estimators=1000)
     model.fit(c)
     sklearn_score_anomalies = model.decision_function(c)
+    original_paper_score = [-1*s + 0.5 for s in sklearn_score_anomalies] #(Source: https://stats.stackexchange.com/questions/335274/scikit-learn-isolationforest-anomaly-score)
     print('Anomaly scores')
-    print(sklearn_score_anomalies)
-    print('Predictions for individual points')
-    print(model.predict(c))
-    #(Source: https://stats.stackexchange.com/questions/335274/scikit-learn-isolationforest-anomaly-score)
-    original_paper_score = [-1*s + 0.5 for s in sklearn_score_anomalies]
+    print(original_paper_score)
+    meanScore = np.mean(original_paper_score)
+    print('Mean score: ' + str(meanScore))
+    sdScore = np.std(original_paper_score)
+    print('Standard deviation: ' + str(sdScore))
+    print('Mean + 1*sd: '+ str(meanScore+sdScore))
+    print('Mean + 2*sd: '+ str(meanScore+2*sdScore))
     cleanCluster = list()
     for i in range(0, len(c), 1):
-        if(original_paper_score[i]>0.65): continue
+        if(original_paper_score[i]>(meanScore+2*sdScore)): continue
         else: cleanCluster.append(c[i])
     cleanCluster = np.array(cleanCluster, dtype = float)
     
