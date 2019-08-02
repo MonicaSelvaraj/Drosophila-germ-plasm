@@ -55,7 +55,8 @@ coordinates = getPoints('3DCoordinates.csv')
 
 #Scaling point cloud to biological size in microns
 #Voxel size for A_nos_embryo7_488_cmle-19-29 is 0.056 x 0.056 x 0.15 micron^3
-x = np.array(coordinates[0]*0.056, dtype = float); y = np.array(coordinates[1]*0.056, dtype = float); z = np.array(coordinates[2]*0.15, dtype = float)
+#x = np.array(coordinates[0]*0.056, dtype = float); y = np.array(coordinates[1]*0.056, dtype = float); z = np.array(coordinates[2]*0.15, dtype = float)
+x = np.array(coordinates[0], dtype = float); y = np.array(coordinates[1], dtype = float); z = np.array(coordinates[2], dtype = float)
 
 #Getting labels 
 labels = getList('hdbscanLabels.csv')
@@ -121,12 +122,22 @@ for i in range(0,50,1):
     fig = plt.figure( )
     plt.style.use('dark_background')
     
-    convexHull = ConvexHull(c)
+    
+    #scaling hull input after removing outliers
+    scx,scy,scz = zip(*c)
+    scx = np.array(scx, dtype = float); scy = np.array(scy, dtype = float); scz = np.array(scz, dtype = float)
+    scx = scx*0.056;scy = scy*0.056;scz = scz*0.15
+    #scx = np.array(scx*0.056, dtype = float); scy = np.array(scy*0.056, dtype = float); scz = np.array(scz*0.15, dtype = float)
+    scaledHullInput = np.vstack((scx,scy,scz)).T
+
+    
+    convexHull = ConvexHull(scaledHullInput)
+    
     
     ax = fig.add_subplot(1,2,1, projection = '3d')
     ax.grid(False)
     #Visualizing the cluster
-    ax.scatter (cx,cy,cz, c = 'g', marker='o', s=10, linewidths=2)
+    ax.scatter (scx,scy,scz, c = 'g', marker='o', s=10, linewidths=2)
     ax.set_title('Before')
     ax.set_xlabel ('x, axis')
     ax.set_ylabel ('y axis')
@@ -134,7 +145,7 @@ for i in range(0,50,1):
     #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
     for s in convexHull.simplices:
         s = np.append(s, s[0])  # Here we cycle back to the first coordinate
-        ax.plot(c[s, 0], c[s, 1], c[s, 2], "r-")
+        ax.plot(scaledHullInput[s, 0], scaledHullInput[s, 1], scaledHullInput[s, 2], "r-")
      
     '''
     Finding the convex hull of clusters after removing outliers
@@ -168,13 +179,20 @@ for i in range(0,50,1):
     
     
     if(len(c) - len(cleanCluster) != 0): rem = rem+1
-    convexHull = ConvexHull(cleanCluster) 
     
+    #Scaling input 
+    sccx,sccy,sccz = zip(*cleanCluster)
+    sccx = np.array(sccx, dtype = float); sccy = np.array(sccy, dtype = float); sccz = np.array(sccz, dtype = float)
+    sccx = sccx*0.056;sccy = sccy*0.056;sccz = sccz*0.15
+    #sccx = np.array(sccx*0.056, dtype = float); sccy = np.array(sccy*0.056, dtype = float); sccz = np.array(sccz*0.15, dtype = float)
+    scaledHullInputClean = np.vstack((sccx,sccy,sccz)).T
+    
+    convexHull = ConvexHull(scaledHullInputClean) 
     
     ax = fig.add_subplot(1,2,2, projection = '3d')
     ax.grid(False)
     #Visualizing the cluster
-    ax.scatter (cx,cy,cz, c = 'g', marker='o', s=10, linewidths=2)
+    ax.scatter (sccx,sccy,sccz, c = 'g', marker='o', s=10, linewidths=2)
     ax.set_title('After')
     ax.set_xlabel ('x, axis')
     ax.set_ylabel ('y axis')
@@ -182,7 +200,7 @@ for i in range(0,50,1):
     #plotting simplices (Source: https://stackoverflow.com/questions/27270477/3d-convex-hull-from-point-cloud)
     for s in convexHull.simplices:
         s = np.append(s, s[0])  # Here we cycle back to the first coordinate
-        ax.plot(cleanCluster[s, 0], cleanCluster[s, 1], cleanCluster[s, 2], "r-")
+        ax.plot(scaledHullInputClean[s, 0], scaledHullInputClean[s, 1], scaledHullInputClean[s, 2], "r-")
     plt.show()
     
 print(rem)
