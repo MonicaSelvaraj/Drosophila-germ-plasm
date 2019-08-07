@@ -81,20 +81,24 @@ def removeOutliers(c):
     return cleanCluster
 
 #Main
+
 #Getting pixel coordinates
 coordinates = getPoints('3DCoordinates.csv')
 x = np.array(coordinates[0], dtype = float); y = np.array(coordinates[1], dtype = float); z = np.array(coordinates[2], dtype = float)
+
 #Getting labels 
 labels = getList('hdbscanLabels.csv')
 numParticles = int(max(labels) + 1)
+
 #Making tuples of the form (x,y,z,label)
 data = np.vstack((x,y,z,labels)).T
+
 #Removing noise points
 denoisedData = [i for i in data if i[3] > -1]
-#Removing anomalous points from a cluster if present
+
 #Lists to plot change in volume
-dv = list();xv = list() #xv is cluster number/x axis for the volume plot 
-vB = list(); vA = list();vC = list() #Storing volume before, after, and change in lists for easily calculating volume after finding the threshold 
+dv = list();xv = list() #xv keeps track of which clusters had anomalous points removed 
+
 for i in range(0, int(numParticles),1): #i iterates through the labels
 #for i in range(0, 20,1):
     cluster = [j for j in denoisedData if j[3] == i] #Accessing the points of every cluster
@@ -105,7 +109,6 @@ for i in range(0, int(numParticles),1): #i iterates through the labels
     oriCH = findConvexHull(c)
     if(oriCH == -1 or oriCH == 2): continue;
     oriVol = oriCH[2]
-    vB.append(oriVol)
     
     cleanCluster = removeOutliers(c)
     
@@ -113,38 +116,68 @@ for i in range(0, int(numParticles),1): #i iterates through the labels
     cleanCH = findConvexHull(cleanCluster)
     if(cleanCH == -1 or cleanCH == 2): continue;
     cleanVol = cleanCH[2]
-    vA.append(cleanVol)
-    
-    vC.append(oriVol - cleanVol)
     
     if((oriVol - cleanVol) != 0):xv.append(i);dv.append(oriVol - cleanVol)
 
-dvMean1 = np.mean(dv);dvSd1 = np.std(dv)
-dvMedian1 = np.median(dv)
-medDev = scipy.stats.median_absolute_deviation(dv)
+dvMean = np.mean(dv)
+dvSd = np.std(dv)
+dvMedian = np.median(dv)
+dvMedDev = scipy.stats.median_absolute_deviation(dv)
+volThreshold = dvMedian + 2*dvMedDev
+
 print('')
 print('Data')
-print('Mean change in volume: ' + str(dvMean1))
-print('Standard deviation of change in volume: ' + str(dvSd1))
-print('Median change in volume: ' + str(dvMedian1))
-print('Median absolute deviation of change in volume: ' + str(medDev))
+print('Number of clusters: ' + str(numParticles))
+print('Mean change in volume: ' + str(dvMean))
+print('Standard deviation of change in volume: ' + str(dvSd))
+print('Median change in volume: ' + str(dvMedian))
+print('Median absolute deviation of change in volume: ' + str(dvMedDev))
+print('Change in volume threshold: ' + str(volThreshold))
+
+clustersWithOutliers = list() #Since volume threshold is not scaled, keeping track of the clusters with outliers so they can be removed later in the script
+
 for v in range(0, len(dv), 1):
-    if(dv[v] > (dvMedian1 + 2*medDev)): plt.scatter(xv[v],dv[v],c='g',s=10)
+    if(dv[v] > (dvMedian + 2*dvMedDev)): plt.scatter(xv[v],dv[v],c='g',s=10);clustersWithOutliers.append(xv[v])
     else: plt.scatter(xv[v],dv[v],c='b',s=10)
 plt.xlabel('Cluster number')
 plt.ylabel('Change in volume')
-plt.xlim(0, 150);plt.ylim(0, 150)
-#plt.text(80, 80, r'$\mu=\dvMean1,\ \sigma=dvSd1$')
+#plt.xlim(0, 150);plt.ylim(0, 150)
 plt.show()
 
-volThreshold = dvMedian1 + 2*medDev
-print('Change in volume threshold: ' + str(volThreshold))
-    
+print('Clusters with outliers: ' + str(clustersWithOutliers))
+print('Number of clusters with outliers: ' + str(len(clustersWithOutliers)))
+
+
+'''
+Using the change in volume threshold to remove anomalous points from clusters
+and finding the total volume
+'''
+#Scaling coordinates 
+xs = np.array(coordinates[0]*0.056, dtype = float); ys = np.array(coordinates[1]*0.056, dtype = float); zs = np.array(coordinates[2]*0.15, dtype = float)
+#Making tuples of the form (x,y,z,label)
+dataScaled = np.vstack((xs,ys,zs,labels)).T
+#Removing noise points
+denoisedDataScaled = [i for i in dataScaled if i[3] > -1]
+
 totalVol = 0
-for m in range(0,len(vC),1):
-    if(vC[m]>=volThreshold): totalVol = totalVol + vA[m]
-    else: totalVol = totalVol + vB[m]
-print('Total volume after anomaly detection: ' + str(totalVol))
-print('')
+
+for i in range(0, int(numParticles),1): #i iterates through the labels
+#for i in range(0, 20,1):
+    cluster = [j for j in denoisedDataScaled if j[3] == i] #Accessing the points of every cluster
+    c = [x[:-1] for x in cluster] #removing labels from cluster coordinates  
+    c = np.array(c, dtype = float)
     
+    if i in clustersWithOutliers:
+        cleanCluster = removeOutliers(c)
+        cleanCH = findConvexHull(cleanCluster)
+        if(cleanCH == -1 or cleanCH == 2): continue;
+        totalVol = totalVol + cleanCH[2]
+    else:
+        oriCH = findConvexHull(c)
+        if(oriCH == -1 or oriCH == 2): continue;
+        totalVol = totalVol + oriCH[2]
+
+print('Total scaled volume after anomaly detection: ' + str(totalVol))
+print('')
+
     
