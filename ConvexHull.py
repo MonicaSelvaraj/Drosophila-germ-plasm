@@ -80,37 +80,6 @@ def removeOutliers(c):
     cleanCluster = np.array(cleanCluster, dtype = float)
     return cleanCluster
 
-def getVolThreshold(x,y):
-    #The elbow point is the point on the curve with the maximum absolute second derivative 
-    #Source: https://dataplatform.cloud.ibm.com/analytics/notebooks/54d79c2a-f155-40ec-93ec-ed05b58afa39/view?access_token=6d8ec910cf2a1b3901c721fcb94638563cd646fe14400fecbb76cea6aaae2fb1
-    data = np.vstack((x,y)).T
-    nPoints = len(x)
-    #Drawing a line from the first point to the last point on the curve 
-    firstPoint = data[0]
-    lastPoint = data[-1]
-    lv = lastPoint - firstPoint #Finding a vector between the first and last point
-    lvn = lv/np.linalg.norm(lv)#Normalizing the vector
-    #Finding the distance to the line 
-    vecFromFirst = data - firstPoint
-    scalarProduct = np.sum(vecFromFirst * np.matlib.repmat(lvn, nPoints, 1), axis=1)
-    vecFromFirstParallel = np.outer(scalarProduct, lvn)
-    vecToLine = vecFromFirst - vecFromFirstParallel
-    # distance to line is the norm of vecToLine
-    distToLine = np.sqrt(np.sum(vecToLine ** 2, axis=1))
-    
-    # knee/elbow is the point with max distance value
-    idxOfBestPoint = np.argmax(distToLine)
-    
-    plt.scatter(x, y, c = 'b')
-    plt.scatter(firstPoint[0],firstPoint[1], c='r')
-    plt.scatter(lastPoint[0],lastPoint[1], c='r')
-    plt.plot([firstPoint[0],lastPoint[0]],[firstPoint[1],lastPoint[1]])
-    plt.scatter(data[idxOfBestPoint][0],data[idxOfBestPoint][1])
-    plt.xlabel('Cluster number')
-    plt.ylabel('Change in volume')
-    plt.show()
-    return data[idxOfBestPoint][1]
-
 #Main
 #Getting pixel coordinates
 coordinates = getPoints('3DCoordinates.csv')
@@ -168,18 +137,6 @@ plt.xlim(0, 150);plt.ylim(0, 150)
 #plt.text(80, 80, r'$\mu=\dvMean1,\ \sigma=dvSd1$')
 plt.show()
 
-'''
-for v in range(0, len(dv), 1):
-    if(dv[v] > (dvMean1 + 2*dvSd1)): plt.scatter(xv[v],dv[v],c='g')
-    else: plt.scatter(xv[v],dv[v],c='b')
-plt.show()
-'''
-
-dv.sort()
-#Generating a list of numbers from 1 to len(dv)
-xaxis = list(range(0,len(dv)))
-#Calculating total volume
-#volThreshold = getVolThreshold(xaxis,dv)
 volThreshold = dvMedian1 + 2*medDev
 print('Change in volume threshold: ' + str(volThreshold))
     
