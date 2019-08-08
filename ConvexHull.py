@@ -171,13 +171,15 @@ for i in range(0, int(numParticles),1): #i iterates through the labels
         cleanCluster = removeOutliers(c)
         cleanCH = findConvexHull(cleanCluster)
         if(cleanCH == -1 or cleanCH == 2): continue;
+        print('Volume: ' + str(cleanCH[2]))
         totalVol = totalVol + cleanCH[2]
     else:
         oriCH = findConvexHull(c)
         if(oriCH == -1 or oriCH == 2): continue;
+        print('Volume: ' + str(oriCH[2]))
         totalVol = totalVol + oriCH[2]
 
-print('Total scaled volume after anomaly detection: ' + str(totalVol))
+print('Total scaled volume after anomaly detection: ' + str(totalVol) + ' micron^3')
 print('')
 
     
