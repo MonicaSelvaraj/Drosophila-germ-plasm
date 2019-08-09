@@ -35,8 +35,8 @@ def getCoordinates(I,slice):
 
 #Getting the coordinates for all the z-slices and storing it in an array called pos
 pos = np.zeros((1,3)) #Making pos the same dimensions as the slice coordinates to allow for concatenation 
-for i in range(0,11,1):
-    I = GetSliceIntensities("Data/A_nos_embryo7_488_cmle-19-29/ZResults/Results"+str(i)+".csv") #I is the matrix of intensities
+for i in range(0,146,1):
+    I = GetSliceIntensities("Data/12days_AM_oocyte1_latticeSIM/ZResults/Results"+str(i)+".csv") #I is the matrix of intensities
     AxisLim = I.shape[0]#Number of rows/columns
     x,y,z = getCoordinates(I,i)
     size = len(z)
